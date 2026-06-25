@@ -163,9 +163,3 @@ The API runs at `http://localhost:8000`.
 | Optional API | FastAPI + Uvicorn |
 | Memory | In-process Python dict (session-scoped) |
 | Config | `python-dotenv` |
-
----
-
-## License
-
-MIT
