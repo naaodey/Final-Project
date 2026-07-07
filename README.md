@@ -1,165 +1,250 @@
-# 📐 Student Study Helper
+# 🛡️ SafeMath Tutor: A Guardrailed AI Assistant for Mathematics Education
 
-An AI-powered maths and statistics tutor that delivers clear, step-by-step solutions through a clean Streamlit interface. Built with Groq (LLaMA 3.3 70B), it includes conversation memory, input guardrails, and structured JSON output — all running from a single Python file with no backend server required.
+An AI-powered mathematics and statistics tutor designed with **AI safety, reliability, and educational integrity** at its core.
 
----
+SafeMath Tutor provides clear, step-by-step solutions through an intuitive Streamlit interface while incorporating guardrails that reduce misuse, improve reliability, and encourage trustworthy interactions with Large Language Models (LLMs).
 
-## Features
-
-- **Step-by-step solutions** — every answer is broken into numbered steps with plain-language explanations
-- **Structured JSON output** — responses follow a consistent schema (`topic`, `steps`, `final_answer`, `confidence`), displayed alongside the UI in a live JSON panel
-- **Conversation memory** — remembers the last 5 questions per session so follow-up questions have full context
-- **Input guardrails** — validates questions against an allowlist of maths/statistics topics and blocks unsafe or off-topic prompts before they reach the model
-- **Example chips** — one-click questions to get started instantly
-- **Session history** — sidebar shows a running log of questions and answers for the current session
+Unlike traditional AI chatbots that prioritize generating answers, SafeMath Tutor emphasizes **safe reasoning, structured outputs, and transparent explanations** to support student learning.
 
 ---
 
-## Project Structure
+## Why This Project?
 
-```
-student-study-helper/
-│
-├── streamlit_app.py   # Main UI — run this to launch the app
-├── main.py            # Core logic: validates, builds context, calls Groq, parses response
-├── memory.py          # In-memory conversation history manager (per session)
-├── guardrails.py      # Input validation: topic allowlist, blocked phrases, length checks
-├── app.py             # Optional FastAPI wrapper (not required to run the app)
-└── .env               # Your Groq API key (see setup below)
-```
+Large Language Models have enormous potential in education, but they also introduce important challenges:
 
----
+* Hallucinated mathematical solutions
+* Incorrect reasoning presented confidently
+* Prompt injection and jailbreak attempts
+* Off-topic conversations
+* Limited transparency into model outputs
 
-## Subjects Covered
-
-| Area | Topics |
-|---|---|
-| **Statistics** | Mean, median, mode, variance, standard deviation, z-score, confidence intervals, hypothesis testing, ANOVA, t-test, chi-square, regression, correlation, Bayes' theorem, distributions (normal, binomial, Poisson) |
-| **Calculus** | Differentiation, integration, limits, derivatives |
-| **Algebra** | Equations, polynomials, quadratics, sequences, series, factorials, permutations, combinations |
-| **Linear Algebra** | Matrices, determinants, eigenvalues, vectors |
-| **Trigonometry** | Sine, cosine, tangent, identities |
-| **General Maths** | Arithmetic, fractions, ratios, logarithms, exponentials, set theory |
+SafeMath Tutor was built to explore how AI systems can become **more trustworthy educational assistants** through structured outputs, input validation, and controlled interactions.
 
 ---
 
-## JSON Response Schema
+# AI Safety Objectives
 
-Every question returns a structured JSON object:
+This project investigates practical approaches to safer educational AI by incorporating:
+
+* Input validation before model execution
+* Prompt injection resistance
+* Topic restriction to approved mathematics and statistics concepts
+* Structured JSON responses
+* Conversation memory with controlled context length
+* Confidence reporting
+* Transparent reasoning through step-by-step explanations
+
+The long-term goal is to study how educational AI systems can become more reliable, interpretable, and safe for classroom use.
+
+---
+
+# Features
+
+## Step-by-step reasoning
+
+Every solution is broken into logical, numbered steps so students learn the reasoning process rather than only receiving the final answer.
+
+---
+
+## Structured JSON Output
+
+Each response follows a predefined schema:
 
 ```json
 {
-  "topic": "Statistics — Variance",
-  "steps": [
-    "List the values: 1, 2, 3, 4, 5. There are n = 5 values.",
-    "Calculate the mean: (1+2+3+4+5) / 5 = 3.",
-    "Find squared deviations from the mean: 4, 1, 0, 1, 4.",
-    "Sum the squared deviations: 10.",
-    "Divide by n: 10 / 5 = 2."
-  ],
-  "final_answer": "The variance of {1, 2, 3, 4, 5} is 2.",
+  "topic": "...",
+  "steps": [...],
+  "final_answer": "...",
   "confidence": "High"
 }
 ```
 
-| Field | Description |
-|---|---|
-| `topic` | Subject area of the question |
-| `steps` | Ordered list of solution steps |
-| `final_answer` | Concise final result |
-| `confidence` | Model's confidence level: `High`, `Medium`, or `Low` |
+This enables:
+
+* easier validation
+* downstream evaluation
+* future automated checking
+* interoperability with other educational systems
 
 ---
 
+## Conversation Memory
 
-## How It Works
-
-```
-User question
-      │
-      ▼
- guardrails.py
- ┌─────────────────────────────────┐
- │ 1. Check question length        │
- │ 2. Scan for blocked phrases     │
- │ 3. Match against topic allowlist│
- │    or maths expression patterns │
- └─────────────────────────────────┘
-      │ valid
-      ▼
-  memory.py
-  └─ Load last 5 Q&A pairs for session context
-      │
-      ▼
-  main.py → Groq API (LLaMA 3.3 70B)
-  └─ System prompt enforces JSON-only output
-      │
-      ▼
-  Parse JSON response
-      │
-      ▼
-  memory.py
-  └─ Save question + answer to session history
-      │
-      ▼
-  streamlit_app.py
-  └─ Render step tiles, final answer box, JSON panel
-```
+Maintains the previous five interactions for each student session, allowing follow-up questions while limiting excessive context accumulation.
 
 ---
 
 ## Guardrails
 
-Questions are validated before reaching the model:
+Every prompt is validated before reaching the LLM.
 
-| Check | Rule |
-|---|---|
-| **Length** | Between 3 and 1000 characters |
-| **Blocked content** | Rejects prompts containing phrases like `hack`, `jailbreak`, `ignore previous instructions`, `reveal system prompt`, etc. |
-| **Topic** | Must match at least one keyword from the maths/statistics allowlist, or match a recognised maths expression pattern (e.g. `x^2`, `f(x)`, `3 + 4`) |
+Current checks include:
 
-Rejected questions return a clear message without calling the model.
+* minimum/maximum length
+* blocked phrases
+* jailbreak attempts
+* prompt injection patterns
+* topic allowlist
+* mathematics expression detection
 
-
-
-## Running the FastAPI backend
-
-`app.py` exposes the same `solve_question` logic as a REST API, useful if you want to call the solver from another application.
-
-```bash
-pip install fastapi uvicorn
-uvicorn app:app --reload
-```
-
-The API runs at `http://localhost:8000`.
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/` | GET | App info |
-| `/health` | GET | Health check |
-| `/about` | GET | Feature list |
-| `/solve` | POST | Submit a question |
-
-**POST `/solve` — request body:**
-
-```json
-{
-  "question": "Find the mean of 2, 4, 6, 8, 10",
-  "session_id": "student_001"
-}
-```
-
-> Note: the Streamlit app does **not** require this server. It calls `solve_question` directly via Python import.
+Unsafe or unrelated prompts are rejected before any API request is made.
 
 ---
 
-## Tech Stack
+## Student-Friendly Interface
 
-| Component | Technology |
-|---|---|
-| UI | Streamlit |
-| AI model | LLaMA 3.3 70B via Groq |
-| API client | `groq` Python SDK |
-| Optional API | FastAPI + Uvicorn |
-| Memory | In-process Python dict (session-scoped) |
-| Config | `python-dotenv` |
+Built with Streamlit, featuring:
+
+* one-click example questions
+* session history
+* structured solution display
+* live JSON panel
+* clean educational interface
+
+---
+
+# System Architecture
+
+```
+Student Question
+        │
+        ▼
+ Input Guardrails
+        │
+        ▼
+ Conversation Memory
+        │
+        ▼
+ Prompt Construction
+        │
+        ▼
+Groq API (LLaMA 3.3 70B)
+        │
+        ▼
+ JSON Parsing
+        │
+        ▼
+ Response Validation
+        │
+        ▼
+ Streamlit Interface
+```
+
+---
+
+# Technology Stack
+
+| Component     | Technology             |
+| ------------- | ---------------------- |
+| Frontend      | Streamlit              |
+| LLM           | LLaMA 3.3 70B via Groq |
+| API Client    | Groq Python SDK        |
+| Optional API  | FastAPI                |
+| Memory        | Python Session Storage |
+| Configuration | python-dotenv          |
+
+---
+
+# Supported Topics
+
+* Statistics
+* Probability
+* Hypothesis Testing
+* Regression
+* Confidence Intervals
+* Bayesian Statistics
+* Algebra
+* Calculus
+* Linear Algebra
+* Trigonometry
+* Arithmetic
+
+---
+
+# Current Safety Features
+
+✅ Topic allowlist
+
+✅ Prompt injection filtering
+
+✅ Jailbreak detection
+
+✅ Structured outputs
+
+✅ Controlled conversation memory
+
+✅ Confidence reporting
+
+✅ Educational reasoning instead of answer-only responses
+
+---
+
+# Planned AI Safety Improvements
+
+The next stage of this project focuses on advancing reliability and trustworthiness.
+
+## Mathematical Verification
+
+Use symbolic mathematics (e.g., SymPy) to independently verify algebraic manipulations, differentiation, integration, and equation solving before presenting results.
+
+---
+
+## Multi-Agent Verification
+
+Generate multiple independent solutions and compare them for consistency before returning a final answer.
+
+---
+
+## Confidence Calibration
+
+Replace qualitative confidence labels ("High", "Medium", "Low") with calibrated confidence scores informed by model behavior and evaluation data.
+
+---
+
+## Hallucination Detection
+
+Automatically identify unsupported or inconsistent mathematical reasoning and flag potentially unreliable responses.
+
+---
+
+## Educational Benchmarking
+
+Evaluate multiple LLMs on standardized mathematics and statistics datasets, including questions aligned with BECE and WAEC curricula, measuring:
+
+* Accuracy
+* Reasoning quality
+* Hallucination rate
+* Explanation clarity
+* Safety performance
+
+---
+
+# Research Directions
+
+This project serves as a foundation for research in:
+
+* AI Safety
+* Responsible AI
+* Educational AI
+* LLM Evaluation
+* AI Reliability
+* Human-AI Interaction
+* AI Alignment for Education
+
+---
+
+# Potential Impact
+
+SafeMath Tutor demonstrates how AI systems can support education while incorporating practical safeguards that encourage reliability, transparency, and responsible use.
+
+The project aims to contribute toward trustworthy AI assistants that help students learn mathematics safely and effectively rather than simply producing answers.
+
+---
+
+# Author
+
+**Naa Odey Solomon (MPhil)**
+
+Mathematics & STEM Educator
+
+AI Developer | Statistics Researcher | Responsible AI Enthusiast
